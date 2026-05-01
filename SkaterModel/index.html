@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skater Avatar + Model Customization Prototype</title>
+    <style>
+        * { 
+            box-sizing: border-box;
+            font-family: sans-serif;
+            margin: 0;
+            padding:0;
+        }
+        body { 
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header { 
+            background-color: #eee;
+            width: 100%;
+            padding: 1rem;
+            border-radius: 1rem;
+            max-height: 50vh;
+            overflow-y: auto;
+
+        }
+        canvas { 
+            border: 2px solid black;
+            /* upscale canvas with window size (does stretch ) */
+            aspect-ratio: 1;
+            width: 50vw;
+            border-radius: 30px;
+        }
+
+        #canvas_ui { 
+            display: flex;
+            flex-direction: column;
+            width: fit-content;
+            background-color: #eee;
+            border-radius: 2rem;
+            padding: 10px;
+            margin: 1rem;
+        }
+
+
+
+        #model_customization_controls { 
+            display: flex;
+            flex-direction: column;
+            width: 40vw;
+            padding: 1rem;
+            font-size: 1.2rem;
+            gap: 0.75rem
+            ;
+        }
+
+        .animation_actions { 
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            justify-content: space-evenly;
+        }
+        .camera_modes { 
+            display: flex;
+        }
+
+        .camera_modes button.enabled { 
+            background-color: royalblue;
+            color: white;
+        }
+        section { 
+            width: 100%;
+            display: flex;
+        }
+        summary {
+            font-size: 1.5rem;
+        }
+        details { 
+            padding: 1rem;
+            
+        }
+        details h3 { 
+            margin-block: 1rem;
+        }
+
+        button { 
+            padding: 10px;
+            margin: 1rem;
+            background-color: #c4c4c4;
+            border: none;
+            border-radius: 10px;
+
+        }
+        button:hover { 
+            background-color: royalblue;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+   
+    
+    <section>
+        <div id="canvas_ui">
+            <canvas id="glCanvas">
+                Your browser does not support WebGL!
+            </canvas>
+            <div class="animation_actions">
+                <button id="toggleAnimationButton">Start Animation</button>
+                <button id="resetAnimationButton">Reset Animation</button>
+            </div>
+        </div>
+
+        <div id="model_customization_controls">
+             <header>
+        <h1>Skater Model</h1>
+        <h2>Andrew Bloese - April 29, 2026 </h2>
+        <details>
+            <summary><strong>Description:</strong></summary>
+    
+            <h3>Overview</h3>
+            <p>
+               
+                In this program, I implemented a hierarchical model of a human figure riding a skateboard in a circular path. The per-face textures for each node of the tree are all generated upon initialization of a model. In addition to generated textures for the clothing and hair / skin, the model supports per-face tinting, so colors of clothing articles or hair or skin tone can be easily applied using tints. Each node is an "instance" of a cube prototype, each with a scale (x,y,z) , translation (x,y,z) , rotation (x,y,z). An additional pivot (x,y,z) attribute was used to allow for adjusting where the rotation point lies relative to the node's center. 
+                
+            </p>
+            <h3>Textures</h3>
+            <p>
+                The textures used in the model were generated using various helper functions in Bloese_Textures.js. The hair function generates random grayscale strips, so that a tint color can be applied in the shader. The flannel shirt function generates a flannel pattern in greyscale, so a tint can be applied to determine the shirt color. Similarly, the other textures use a similar strategy by generating the raw RGBA bytes for the texture once on model initialization. Per-face textures and tints were achieved by providing each node with an array of textures in the same order as the faces of the prototype cube. 
+            </p>
+
+            <h3>Phong Shading</h3>
+            <p>
+                The avatar textures and floor texture are treated as decals, so a tint can be applied to a texture lookup. For the red, green, blue and magenta obstacles, phong shading was utilized by defining a material for each color. Flags are sent to the GPU via uniforms to determine if a texture or material or debug texture are being applied.
+                The debug texture is the "normal" color mixed with the texture coordinates of each face, and it resembles an oil slick type texture. One obstacle was left untextured and without material to show this. 
+            </p>
+
+            <h3>Camera Modes</h3>
+            <p>By using the camera controls the user can toggle between various camera modes. </p>
+            <ul style="margin-left: 1rem;">
+                <li>Fixed Camera - is like having a camera setup on a tripod watching the avatar skate around</li>
+                <li>Follow Camera (Front and Back) - the camera follows the avatar either from the front or the back, looking at the avatar</li>
+                <li>
+                    Orbit Camera - this camera slowly orbits in the opposite direction of the avatar while focusing on the world origin (0,0,0)
+                </li>
+
+            </ul>
+            
+
+            <h3>Fun Quirks</h3>
+            <p>
+                <ul style="margin-left: 1rem;">
+                    <li><strong>Container Nodes</strong> - By using a node with scale of 0, and ignoring render on nodes with 0 scale,  it is possible to create "groups" of nodes 
+                    </li>
+                    <ul style="margin-left: 1rem;">
+                        <li>In order to easily place the beard pieces, a facial hair container node was used</li>
+                        <li>
+                            To proprerly group the chest (original root) and skateboard nodes, an "avatar" container node was created to act as a root.
+                        </li>
+                    </ul>
+                    <li>
+                        <strong>Grayscale Textures</strong> - By using grayscale textures, it is possible to use the builtin mix() function in the fragment shader to change the color using a tint color uniform. 
+                        <ul style="margin-left: 1rem;">
+                            <li>
+                                This enables easy customization of a model's skin tone, hair color, or clothing. 
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </p>
+                
+
+            <h3>
+                References
+            </h3>
+            <ul style="margin-left: 1rem;">
+                <li>Lecture Materials and Demos from CSE470 ASU Spring 2026</li>
+                <li>Past experience working with blender, threejs and godot, which helped me better understand the hierarchy / scene graph concept</li>
+            </ul>
+            
+
+        </details>
+        
+    </header>
+            <h2>Model Size Controls</h2>
+            <p>Adjust the scale of different sections of the model</p>
+
+            <label for="torso_size">Chest Size</label>
+            <input type="range" min="0" max="4" step="1" value="1" id="chest_size">
+
+            <label for="torso_size">Torso Size</label>
+            <input type="range" min="0" max="4" step="1" value="1" id="torso_size">
+            
+            
+            <label for="arm_size">Arm Size</label>
+            <input type="range" min="0" max="4" step="1" value="1" id="arm_size">
+            
+            <label for="leg_size">Leg Size</label>
+            <input type="range" min="0" max="4" step="1" value="1" id="leg_size">
+
+
+            <label for="beard">Beard Size</label>
+            <input type="range" min="0" max="1" step="1", value="1" id="beard_size">
+            <label for="beard">Mustache Size</label>
+            <input type="range" min="0" max="3" step="1", value="1" id="mustache_size">
+
+
+            <div class="camera_modes">
+                <button id="orbitBtn" class="enabled">
+                    Orbit Camera 
+                </button>
+                <button id="followFrontBtn">
+                    Follow (Front) Camera 
+                </button>
+                <button id="followBackBtn">
+                    Follow (Back) Camera
+                </button>
+                <button id="fixedCamBtn">
+                    Fixed Camera
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    
+    
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        // recieve attributes for position / normals 
+        attribute vec4 vPosition; 
+        attribute vec4 vNormal; 
+        attribute vec2 vTexCoord;
+
+
+        // recieve matrices for 
+        uniform mat4 u_modelViewMatrix; 
+        uniform mat4 u_projectionMatrix; 
+        uniform mat4 u_instanceMatrix; 
+
+        uniform int u_is_material;
+        uniform vec3 u_light_position ;
+
+        varying vec4 f_color; //pass a color to the fragment for now
+        varying vec2 f_uv; 
+        varying vec3 f_Normal;
+        varying vec3 f_Light; 
+        varying vec3 f_Eye; 
+
+
+        void main(){
+            f_color = vec4(0.5 * vNormal.xyz + 0.5, 1.0);
+            f_uv = vTexCoord;
+            gl_Position = u_projectionMatrix * u_modelViewMatrix * u_instanceMatrix * vPosition;
+            
+
+            vec4 p = u_modelViewMatrix * vec4(vPosition.xyz,1.0);
+            vec4 lEye = u_modelViewMatrix * vec4(u_light_position,1.0);
+            
+            f_Light = (lEye-p).xyz; 
+            f_Eye = -p.xyz; 
+            f_Normal = (u_modelViewMatrix*vec4(vNormal)).xyz; 
+        }
+
+
+
+
+
+
+        
+    </script>
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+
+        varying vec4 f_color; //debug color
+        varying vec2 f_uv;  //texture coords
+        varying vec3 f_Normal; 
+        varying vec3 f_Light;
+        varying vec3 f_Eye; 
+
+        //texture to draw 
+        uniform sampler2D u_texture; 
+        uniform vec4 u_tint_color; 
+        uniform int u_texture_active; 
+
+        //is this a phong shaded material? 
+        uniform int u_is_material; 
+
+        //phong material properties
+        uniform vec3 u_ambient;
+        uniform vec3 u_diffuse;
+        uniform vec3 u_specular;
+        uniform float u_shininess;
+
+        //light position 
+        uniform vec3 u_light_position; 
+
+        vec3 LIGHT_COLOR = vec3(1.0,1.0,1.0);
+
+
+        void main(){
+            //debug color - uv and normals
+            vec4 color =  mix(f_color,vec4(f_uv,0.5,1.0), 0.5);
+            //no texture = base color
+
+            if(u_texture_active == 1){
+                vec4 sampleColor = texture2D(u_texture,f_uv);
+
+                color = mix(u_tint_color, sampleColor, 0.2);
+            } else if(u_is_material == 1){
+
+                vec3 N = normalize(f_Normal);
+                vec3 L = normalize(f_Light);
+                vec3 E = normalize(f_Eye); 
+
+                vec3 R = reflect(-L,N); 
+                vec3 ambient = u_ambient * LIGHT_COLOR; 
+
+                float Kdiffuse = max(dot(L,N),0.0); 
+                vec3 diffuse = Kdiffuse * u_diffuse * LIGHT_COLOR; 
+
+                float Kspecular = pow(max(dot(E,R),0.0), u_shininess);
+                vec3 specular = Kspecular * u_specular * LIGHT_COLOR; 
+
+                if( dot(L,N) < 0.0) { 
+                    specular = vec3(0.0,0.0,0.0);
+                }
+
+                vec3 phong = ambient + diffuse + specular; 
+                color = vec4(phong.xyz,1.0); 
+            }
+
+
+            
+
+
+            gl_FragColor = color; 
+
+            
+
+        }
+        
+    </script>
+
+    <!-- Libraries -->
+    <script type="text/javascript" src="../Common/initShaders.js"></script>
+    <script type="text/javascript" src="../Common/webgl-utils.js"></script>
+    <script type="text/javascript" src="../Common/MV.js"></script>
+    <script type="text/javascript" src="./Bloese_constants_hw4.js"></script>
+    <script type="text/javascript" src="./Bloese_logging.js"></script>
+    <script type="text/javascript" src="./Bloese_PrototypeCube.js"></script>
+    <script type="text/javascript" src="./Bloese_Textures.js"></script>
+    <script type="text/javascript" src="./Bloese_avatar.js"></script>
+    <script type="text/javascript" src="./Bloese_skater.js"></script>
+
+
+
+
+</body>
+</html>
